@@ -1,0 +1,47 @@
+#!/bin/bash
+
+# Variables
+NOW=$(date +"%Y%m%d")
+LOGFILE="$HOME/.logs/brew-update-$NOW"
+# DO NOT EDIT BELOW THIS LINE
+echo "==> Exporting brew & brew-cask versions to $LOGFILE"
+if [ ! -d $HOME/.logs ]; then
+  mkdir $HOME/.logs
+  touch $LOGFILE
+else
+  rm -rf $LOGFILE
+  touch $LOGFILE
+fi
+echo "==> Homebrew versions" >> $LOGFILE
+brew list --versions >> $LOGFILE
+if [ -d /usr/local/Caskroom ]; then
+  echo "==> Homebrew cask versions" >> $LOGFILE
+  brew cask list --versions >> $LOGFILE
+fi
+echo "==> Updating homebrew and homebrew cask version listings..."
+brew update
+echo ""
+if [ "$1" == "all" ]; then
+  echo "==> updating homebrew formulas"
+  brew upgrade --all
+  echo "==> updating homebrew casks..."
+  brew cask list | xargs brew cask install --force
+elif [ "$1" == "cask" ] && [ -z "$2" ]; then
+  echo "==> updating homebrew casks..."
+  brew cask list | xargs brew cask install --force
+elif [ "$1" == "cask" ] && [ -n "$2" ]; then
+  echo "==> updating homebrew cask $2"
+  brew cask install --force $2
+else
+echo "==> updating homebrew formulas..."
+brew upgrade
+fi
+echo ""
+echo "==> Cleaning homebrew and homebrew cask after upgade"
+brew cleanup
+brew cask cleanup
+echo "==> Fixing any errors with homebrew"
+brew prune
+brew doctor
+echo "==> Cleaning old logs"
+rm -f $(ls -1t $HOME/.logs/brew-update-* | tail -n +13)
